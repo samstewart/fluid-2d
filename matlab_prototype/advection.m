@@ -9,6 +9,10 @@ function advected_substance = advection(velocity_field, substance, dt, dx)
 	N = floor(1/dx);
 	grid_coords = meshgrid(1:N, 1:N);
 
-	% we move backwards in space to see where we came from
-	old_pos = grid_coords 
+	% we move backwards in space to see where we came from.
+	% we are really just following characteristics backwards
+	% (looking upstream).
+	old_pos = grid_coords - dt * N * velocity_field;
+	
+	advected_substance = quantity(old_position);
 end
