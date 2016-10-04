@@ -9,16 +9,18 @@
 function advected_substance = advection(velocity_field, substance, dt, dx) 	
 	N = floor(1/dx);
 
-	% we move backwards in space to see where we came from.
-	% we are really just following characteristics backwards
-	% (looking upstream).
-	old_pos = grid_coords - dt * N * velocity_field;
-	
+
 	% due to the annoyances in matlab's array notation, we cannot do this in one step but
 	% must instead unwind this into a loop.
+	for i = 2:(N - 1)
+		for j = 2:(N - 1)
+			% we move backwards in space to see where we came from.
+			% we are really just following characteristics backwards
+			% (looking upstream).
+			grid_coords = [i j];
 
-	for i = 1:N
-		for j = 1:N
+			old_pos = grid_coords - dt * N * velocity_field(i, j);
+			
 			% we might land "in between" grid cells so we need to interpolate.	
 			advected_substance(i,j) = bilinear_interpolate(substance, old_pos);
 		end
