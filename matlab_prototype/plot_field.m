@@ -7,7 +7,7 @@ function plot_field(field)
     
     if P == 2
         % plot the vector field
-        [x,y] = meshgrid(1:1:N, 1:1:M)
+        [x,y] = meshgrid(1:1:N, 1:1:M);
     
         u = field(:, :, 1);
         v = field(:, :, 2);

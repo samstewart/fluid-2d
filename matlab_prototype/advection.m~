@@ -27,12 +27,10 @@ function advected_substance = advection(velocity_field, substance, dt, dx)
             % we have to flip the coordinates and negate the Y component to
             % fit in the array coordinates which *increase* as we go
             % downwards.
-            velocity_vector_in_grid_coords = [0 -1; 1 0] * dt * N * squeeze(velocity_field(i, j, :));
-            velocity_vector_in_grid_coords = velocity_vector_in_grid_coords'
+            velocity_vector_in_grid_coords = [0 -1; 1 0] . (dt * N * squeeze(velocity_field(i, j, :))')
 			old_pos = clamp_to_range(grid_coords - velocity_vector_in_grid_coords, boundaries)
 			
 			% we might land "in between" grid cells so we need to interpolate.	
-            bilinear_interpolate(substance, old_pos)
 			advected_substance(i,j) = bilinear_interpolate(substance, old_pos);
         end
 	end	
