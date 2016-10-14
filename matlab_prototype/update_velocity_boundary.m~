@@ -1,0 +1,25 @@
+% updates a given f
+% velocity_field: the actual field we wish to update.
+% returns updated_field
+function updated_field = update_velocity_boundary(velocity_field)
+	% the actualy boundary lies between two cells. The no slip condition
+	% gives that, for example on the left,
+    %   \frac{u_0,j + u_1,j}{2} = 0
+    % which gives the condition
+    %   u_0,j = -u_1, j
+    
+    % handle the left boundary
+    velocity_field(:, 1, :) = -velocity_field(:, 2, :);
+    
+    % handle the right boundary
+    velocity_field(:, end, :) = -velocity_field(:, end - 1, :);
+    
+    % handle the top boundary
+    velocity_field(1, :, :) = -velocity_field(2, :, :);
+    
+    % handle the bottom boundary
+    velocity_field(end, :, :) = -velocity_field(end - 1, :, :);
+    
+    % TODO: does it matter what we set the four corners to?
+    updated_field = velocity_field;
+end

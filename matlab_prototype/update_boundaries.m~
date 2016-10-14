@@ -1,0 +1,8 @@
+% updates the velocity field based on the no-slip boundary condition.
+% velocity_field: the actual field we wish to update.
+% returns updated_field
+function updated_field = update_velocity_boundary(velocity_field)
+	% the actualy boundary lies between two cells. The no slip condition
+	% gives that, for example on the left,
+    %   \frac{u_0,j + u_1,j}{2} = 0
+end
