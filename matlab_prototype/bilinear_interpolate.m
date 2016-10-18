@@ -12,12 +12,18 @@ function interpolated = bilinear_interpolate(field, coord)
 	% these will be the values we use to interpolate and find the value of our point.
 	% we only need the upper left grid point to construct our cell specific coordinate system.
 	upper_left_grid_point = floor(coord);
-
+    
+    % we need to make sure we don't move off the boundary
+    [N, M] = size(field);
+    
+    % [TOP RIGHT BOTTOM LEFT]
+    boundary = [1 N M 1];
+    
 	% now we find the value of the field at the four surrounding grid points for this cell.	
 	upper_left_field_value  = indByVec(field, upper_left_grid_point);
-	lower_left_field_value  = indByVfec(field, upper_left_grid_point + [0 1]); 
-	upper_right_field_value = indByVec(field, upper_left_grid_point + [1 0]);
-	lower_right_field_value  = indByVec(field, upper_left_grid_point + [1 1]);
+	lower_left_field_value  = indByVec(field, clamp_to_range(upper_left_grid_point + [1 0], boundary));
+	upper_right_field_value = indByVec(field, clamp_to_range(upper_left_grid_point + [0 1], boundary));
+	lower_right_field_value  = indByVec(field, clamp_to_range(upper_left_grid_point + [1 1], boundary));
 
 	% we find our coordinates in cell space. 
 	% For example, (.5, .5) would represent the middle of the cell.

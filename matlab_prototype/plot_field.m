@@ -12,7 +12,9 @@ function plot_field(field)
         u = field(:, :, 1);
         v = field(:, :, 2);
     
-        quiver(x,y,u,v);
+        % notice how we flip the coordinates to place it into physical
+        % space
+        quiver(x,y,v,-u);
     else
         % it's a scalar field so print a heatmap
         colormap('hot');

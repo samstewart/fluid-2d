@@ -1,6 +1,6 @@
 % simple function that takes substance and transports it via a velocity field.
 % currently uses an implicit method.
-% velocity_field: a 2D vector array of the velocity field. [0 1/dx]^2
+% velocity_field: a 2D vector array of the velocity field. Should be specified in grid coords.
 % substance: a 2D vector array of the substance.
 % dt: change in time
 % dx: size of grid cell
@@ -20,19 +20,12 @@ function advected_substance = advection(velocity_field, substance, dt, dx)
 			% we move backwards in space to see where we came from.
 			% we are really just following characteristics backwards
 			% (looking upstream).
-			grid_coords = [i j]
-
+			grid_coords = [i j];
+            
             % make sure we don't escape the bounds of the grid.
-            % Q: does this depend on the continuity of the velocity field?
-            % we have to flip the coordinates and negate the Y component to
-            % fit in the array coordinates which *increase* as we go
-            % downwards.
-            velocity_vector_in_grid_coords = [0 -1; 1 0] * dt * N * squeeze(velocity_field(i, j, :));
-            velocity_vector_in_grid_coords = velocity_vector_in_grid_coords'
-			old_pos = clamp_to_range(grid_coords - velocity_vector_in_grid_coords, boundaries)
+			old_pos = grid_coords - dt * N * squeeze(velocity_field(i, j, :))';
 			
 			% we might land "in between" grid cells so we need to interpolate.	
-            bilinear_interpolate(substance, old_pos)
 			advected_substance(i,j) = bilinear_interpolate(substance, old_pos);
         end
 	end	

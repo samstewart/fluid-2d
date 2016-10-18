@@ -1,8 +1,6 @@
 % takes a scalar field and fills out all the values from the points already given
-% using bilinear interpolation
-function interpolated = interpolate_field(field)
-   
-    [N,M] = size(field)
+% using bilinear interpolation. Creates a new M*N interpolated field.
+function interpolated = interpolate_field(field, M, N)
     interpolated = zeros(N, M);
     
     % now we go through and interpolate each entry based on the four

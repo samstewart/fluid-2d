@@ -14,10 +14,10 @@ function interpolated = bilinear_interpolate(field, coord)
 	upper_left_grid_point = floor(coord);
 
 	% now we find the value of the field at the four surrounding grid points for this cell.	
-	upper_left_field_value  = indByVec(field, upper_left_grid_point);
-	lower_left_field_value  = indByVec(field, upper_left_grid_point + [0 1]); 
-	upper_right_field_value = indByVec(field, upper_left_grid_point + [1 0]);
-	lower_right_field_value  = indByVec(field, upper_left_grid_point + [1 1]);
+	upper_left_field_value  = indByVec(field, upper_left_grid_point)
+	lower_left_field_value  = indByVec(field, upper_left_grid_point + [1 0]) 
+	upper_right_field_value = indByVec(field, upper_left_grid_point + [0 1])
+	lower_right_field_value  = indByVec(field, upper_left_grid_point + [1 1])
 
 	% we find our coordinates in cell space. 
 	% For example, (.5, .5) would represent the middle of the cell.
@@ -32,10 +32,10 @@ function interpolated = bilinear_interpolate(field, coord)
 	% and then we interpolate linearly horizontally.	
 	
 	% we first find an interpolation vertically on the left side
-	left_interpolated = (1 - cell_y) * upper_left_field_value + cell_y * lower_left_field_value
+	left_interpolated = (1 - cell_y) * upper_left_field_value + cell_y * lower_left_field_value;
 
 	% we then find an interpolate vertically on the right side.
-	right_interpolated = (1 - cell_y) * upper_right_field_value + cell_y * lower_right_field_value
+	right_interpolated = (1 - cell_y) * upper_right_field_value + cell_y * lower_right_field_value;
 	
 	% we now interpolate horizontally between these values
 	interpolated  	   = (1 - cell_x) * left_interpolated + cell_x * right_interpolated;
