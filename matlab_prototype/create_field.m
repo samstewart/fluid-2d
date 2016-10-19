@@ -6,15 +6,18 @@
 function field = create_field(F, dx)
     N = floor(1/dx);
     
-    field = zeros(N, N);
+    velocity_field = zeros(N, N, 2);
     
     for i = 1:N
         for j = 1:N
             % put the coordinate in [0, 1]^2.
-            user_space_coord = [1 - (i / N) (j / N)];
-            [x,y] = F(user_space_coord);
-            field(i, j) = [N* ;
+            [x,y] = from_grid_coords(i, j, dx);
+            v = F(x,y);
             
+            % now put into coordinates.
+            velocity_field(i, j, :) = [-N * v(2), v(1) * N];
         end
     end
+    
+    field = velocity_field;
 end
