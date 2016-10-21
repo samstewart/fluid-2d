@@ -5,4 +5,8 @@ A simple fluid simulator based on the wonderful article [1].
 
 Where I left off:
 I am making a convenience function to generate a force field in user coordinates [0, 1]^2. This will allow me to test the advection code for different fields.
-For example, those with swirl, etc.f
+For example, those with swirl, etc.
+
+As I just learned in a graphics talk, I need to make a connection between grid coordinates and the unit square. 
+
+This will be an affine transformation that I use whenever plotting or inputing data.
