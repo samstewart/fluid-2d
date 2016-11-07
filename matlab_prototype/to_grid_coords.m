@@ -4,7 +4,6 @@ function [u, v] = to_grid_coords(x, y, dx)
     
     % T(x,y) = ((1 - y)(N - 1) + 1, (N - 1)x + 1)
     
-    u = (1 - y)*(N - 1) + 1;
-    v = x*(N - 1) + 1;
-    
+    u = x * N + 1;
+    v = y * N + 1;
 end

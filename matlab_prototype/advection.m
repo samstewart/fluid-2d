@@ -11,12 +11,12 @@ function advected_substance = advection(velocity_field, substance, dt, dx)
     advected_substance = zeros(N, N);
     
     % [TOP RIGHT BOTTOM LEFT]
-    boundaries = [1 N N 1];
+    boundaries = [1 (N + 1) (N + 1) 1];
     
 	% due to the annoyances in matlab's array notation, we cannot do this in one step but
 	% must instead unwind this into a loop.
-	for i = 2:(N - 1)
-		for j = 2:(N - 1)
+	for i = 2:N
+		for j = 2:N
 			% we move backwards in space to see where we came from.
 			% we are really just following characteristics backwards
 			% (looking upstream).

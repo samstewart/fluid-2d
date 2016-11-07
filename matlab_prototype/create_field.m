@@ -8,14 +8,19 @@ function field = create_field(F, dx)
     
     velocity_field = zeros(N, N, 2);
     
-    for i = 1:N
-        for j = 1:N
+    for i = 1:(N + 1)
+        for j = 1:(N + 1)
             % put the coordinate in [0, 1]^2.
             [x,y] = from_grid_coords(i, j, dx);
-            v = F(x,y);
+            
+            v = F([x y]);
+            
+            % vectors transform under pushforward.
+            u = v(1) * N;
+            v = v(2) * N;
             
             % now put into coordinates.
-            velocity_field(i, j, :) = [-N * v(2), v(1) * N];
+            velocity_field(i, j, :) = [u v];
         end
     end
     

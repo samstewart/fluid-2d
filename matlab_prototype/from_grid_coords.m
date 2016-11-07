@@ -2,7 +2,6 @@
 function [x,y] = from_grid_coords(u, v, dx)
     N = floor(1/dx);
     
-    x = (v - 1)/(N - 1);
-    y = (1 - u)/(N - 1) + 1;
-    
+    x = (u - 1)/N;
+    y = (v - 1)/N;
 end
