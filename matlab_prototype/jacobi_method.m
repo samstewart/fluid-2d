@@ -4,13 +4,14 @@
 % N: number of iterations
 % returns: column vector solution after N iterations
 
-function sol = jacobi_iteration(A, b, N)
+function sol = jacobi_method(A, b, N)
 	diagonal = diag(diag(A)); % strip out the diagonal
-	diag_inv = inv(diagonal);
 	diag_deleted = A - diagonal; % delete the diagonal
 	
-	sol = zeros(rows(b), 1); % initial guess of zero
+	sol = zeros(size(b, 1), 1); % initial guess of zero
+    
 	for i = 1:N
-		sol = diag_inv * (b - diag_deleted * sol)
+        % computing the matrix inverse
+		sol = diagonal \ (b - diag_deleted * sol)
 	end
 end
