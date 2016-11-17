@@ -1,19 +1,34 @@
 % solves a poisson equation using jacobi method.
 % We allow the user to specify two parameters that distinguish between the
-% poisson equation for 
-function interior_solution = solve_poisson_equation(field, b, dx)
+% poisson equation for dissipation and the poisson equation for pressure.
+% stencil: allows you to specify the coefficients of the sampled grid
+% points.
+%   x_{i - 1, j} stencil(1) + x_{i + 1, j} stencil(2) + x_{i, j - 1}
+%   stencil(3) + x_{i, j + 1} stencil(4) + x_{i, j} stencil(5)
 
-    % Create stencil using this ordering:
-    %       4
-    %       |
-    %       |
-    % 2 --- 3 ----- 5
-    %       |
-    %       |
-    %       1
-    
+function interior_solution = solve_poisson_equation(grid, dx, stencil) 
     % we do 35 iterations to solve the equation.
     % Method to solve a linear system via jacobi iteration
-
+    
+    % the solution will be a vector field
+    solution = grid2d(grid.N(), false)
+    
+    for i = 2:(grid.N() - 1)
+        for j = 2:(grid.N() - 1)
+           center = [i j];
+           up = center + [0 1];
+           down = center + [0 -1];
+           right = center + [1 0];
+           left = center + [-1 0];
+           
+           % now we evolve to the next step
+           solution.values(i, j, :) = (stencil(1) * grid.gridValueAt(left) ...
+           + stencil(2) * grid.gridValueAt(right) ...
+           + stencil(3) * grid.gridValueAt(down) ...
+           + stencil(4) * grid.gridValueAt(up) ...
+           + stencil(5) * grid.gridValueAt(center));
+           
+        end
+    end
 
 end

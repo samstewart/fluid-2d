@@ -280,8 +280,10 @@ classdef grid2d < handle
             % decide what kind of field to construct
             is_scalar = varargin{2};
             if is_scalar
+                % scalar field
                 obj.values = zeros(obj.N + 1, obj.N + 1, 1);
             else
+                % 2D vector field
                 obj.values = zeros(obj.N + 1, obj.N + 1, 2);
             end
             
@@ -309,20 +311,7 @@ classdef grid2d < handle
                     end
                 end
             end
-            
-            % pre-compute the discretized differential operators
-            % now build the differentiation operator from the centered finite
-            % difference stencil
-            stencil = 1/(2*obj.dx)* [ 0 -1 0 1 0];
-            
-            % compute the divergence operator
-            obj.discreteized_divergence_operator = create_matrix_from_stencil(stencil, obj.stencil_length());
-            
-            stencil = 1/(2 * dx) * [1 1 -4 1 1];
-            
-            % compute the laplacian operator
-            obj.discreteized_laplacian_operator  = create_matrix_from_stencil(stencil, obj.stencil_length());
-            
+
         end
         
         % converts from grid coordinates to normalized [0, 1]^2 coordinates
