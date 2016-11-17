@@ -1,0 +1,19 @@
+% solves a poisson equation using jacobi method.
+% We allow the user to specify two parameters that distinguish between the
+% poisson equation for 
+function interior_solution = solve_poisson_equation(field, b, dx)
+
+    % Create stencil using this ordering:
+    %       4
+    %       |
+    %       |
+    % 2 --- 3 ----- 5
+    %       |
+    %       |
+    %       1
+    
+    % we do 35 iterations to solve the equation.
+    % Method to solve a linear system via jacobi iteration
+
+
+end

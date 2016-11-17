@@ -13,5 +13,6 @@ function sol = jacobi_method(A, b, N)
 	for i = 1:N
         % computing the matrix inverse
 		sol = diagonal \ (b - diag_deleted * sol)
-	end
+    end
+    
 end

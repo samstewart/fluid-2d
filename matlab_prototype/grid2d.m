@@ -1,6 +1,6 @@
 % represents 2D grid of region [1, N]x[1,N] (we call these grid
 % coordinates)
-classdef grid2d
+classdef grid2d < handle
     properties
         % 2D array of values (i, j) |-> (x_i, y_i)
         values 
@@ -10,27 +10,70 @@ classdef grid2d
         
         % discretized divergence operator (we cache the matrix)
         discreteized_divergence_operator
+        
+        % number of grid points
+        N
+        % determines if scalar or vector field
+        is_scalar_field
     end
     
     properties (Dependent)
-        % spatial resolution
-        dx
-        % number of grid points
-        N
         % this grid represented as a stencil
         stencil_vector
-        % determines if scalar or vector field
-        is_scalar_field
+        % size of the stencil vector
+        stencil_length
         
+        % spatial resolution
+        dx
+        % size of the grid (N + 1) x (N + 1)
+        grid_size
     end
     
     methods (Access = private)
+        % creates a sparse matrix from a stencil for four points. 
+        % The stencil should have the following ordering when converting
+        % from the 2D grid to 1D vector
+        %       4
+        %       |
+        %       |
+        % 2 --- 3 ----- 5
+        %       |
+        %       |
+        %       1
+        
+        function m = create_matrix_from_stencil(stencil)
+            % make bands from stencil into sparse matrix
+
+            % first band
+            i1 = 1:N;
+            j1 = 1:N;
+            s1 = ones(1, N) * stencil(1);
+
+            % second band
+            j2 = i1 + 1;
+            s2 = ones(1, N) * stencil(2);
+
+            % third band
+            j3 = i1 + 2;
+            s3 = ones(1, N) * stencil(3);
+
+            % fourth band
+            j4 = i1 + 3;
+            s4 = ones(1, N) * stencil(4);
+
+            % fifth band
+            j5 = i1 + 4;
+            s5 = ones(1, N) * stencil(5);
+
+            m = sparse([i1 i1 i1 i1 i1], [j1 j2 j3 j4 j5], [s1 s2 s3 s4 s5]);
+        end
+        
         % simple command that converts a vector to a multidimensional index given the size of the array
         % you should ignore any singleton dimensions (don't provide an element of the vector)
         % TODO turn this into a Gist
         % size_of_matrix: vector of dimensions of the matrix (can include singleton dimensions)
         % vec_index: a vector whose nth component corresponds to the nth index. 
-        function indx = vec2ind(size_of_matrix, vec_index)
+        function indx = vec2ind(obj, size_of_matrix, vec_index)
             % We convert this to a linear index. Not that matlab takes the full n dimensional integer
                 % lattice and converts it to a one dimensional integer lattice by reading off successive columns.	
             % the formula (really bijection between countable sets) between Z^n_1 x Z^n_2 x Z^n_3 --- Z^n_k is given by 
@@ -65,15 +108,8 @@ classdef grid2d
     end
     
     methods
-        
-        function obj = set.dx(obj, dx_new)
-            obj.dx = dx_new;
-            obj.N = floor(1 / obj.dx);
-        end
-        
-        function obj = set.N(obj, N_new) 
+        function set.N(obj, N_new) 
             obj.N  = N_new;
-            obj.dx = 1.0 / obj.N;
         end
         
         function dx = get.dx(obj)
@@ -81,7 +117,16 @@ classdef grid2d
         end
         
         function N = get.N(obj)
-            N = floor(1 / obj.dx);
+            N = obj.N;
+        end
+        
+        function g_size = get.grid_size(obj)
+            s      = size(obj.values);
+            g_size = s(1 : end - 1);
+        end
+        
+        function stencil_length = get.stencil_length(obj)
+            stencil_length = 5 * (obj.N - 1)^2;
         end
         
         % code that converts the vector we use when multiplying by the stencil
@@ -94,7 +139,7 @@ classdef grid2d
         %       |
         %       1
 
-        function obj = set.stencil_vector(obj, vector_in)
+        function set.stencil_vector(obj, vector_in)
             obj.values = zeros(obj.N, obj.N);
 
             % the current index of the center point in above diagram in the
@@ -138,7 +183,7 @@ classdef grid2d
         % plots a 3D array representing a vector field in grid coordinates (1, 1),
         % (1, 2), etc. The plotting will be in grid coordinates so the field
         % should be in grid coordinates.
-        function plot_field(obj)
+        function plot(obj)
             if obj.is_scalar_field()
                 % it's a scalar field so print a heatmap
                 colormap('hot');
@@ -177,7 +222,7 @@ classdef grid2d
             % neighbors during this conversion process?
 
             % total_rows = 5 points per interior grid point
-            stencil_vector = zeros( 5 * (obj.N - 1)^2, 1);
+            stencil_vector = zeros( obj.stencil_length(), 1);
 
             % the current index of the center point in above diagram in the
             % stencil_vector.
@@ -227,7 +272,7 @@ classdef grid2d
             resolution = varargin{1};
             
             if resolution < 1
-                obj.dx = resolution;
+                obj.N = floor( 1 / resolution );
             else
                 obj.N = resolution;
             end
@@ -248,8 +293,8 @@ classdef grid2d
                 % field
                 F = varargin{3};
                 
-                for i = 1:(N + 1)
-                    for j = 1:(N + 1)
+                for i = 1:(obj.N + 1)
+                    for j = 1:(obj.N + 1)
                         % put the coordinate in [0, 1]^2.
                         [x,y] = obj.from_grid_coords(i,j);
 
@@ -266,9 +311,19 @@ classdef grid2d
             end
             
             % pre-compute the discretized differential operators
+            % now build the differentiation operator from the centered finite
+            % difference stencil
+            stencil = 1/(2*obj.dx)* [ 0 -1 0 1 0];
+            
+            % compute the divergence operator
+            obj.discreteized_divergence_operator = create_matrix_from_stencil(stencil, obj.stencil_length());
+            
+            stencil = 1/(2 * dx) * [1 1 -4 1 1];
+            
+            % compute the laplacian operator
+            obj.discreteized_laplacian_operator  = create_matrix_from_stencil(stencil, obj.stencil_length());
+            
         end
-        
-        
         
         % converts from grid coordinates to normalized [0, 1]^2 coordinates
         function [x,y] = from_grid_coords(obj, u, v)
@@ -282,12 +337,10 @@ classdef grid2d
             u = x * obj.N + 1;
             v = y * obj.N + 1;
         end
-        
-        
 
         % takes a scalar field and fills out all the values from the points already given
         % using bilinear interpolation. Creates a new MxM interpolated field.
-        function interpolated = interpolate_grid(obj, M)
+        function refine_grid(obj, M)
             
             interpolated = zeros(M, M);
 
@@ -299,7 +352,8 @@ classdef grid2d
                     interpolated(i, j) = obj.interpolateValueAt([1 + (i - 1)/M 1 + (j - 1)/M]);
                 end
             end
-
+            
+            obj.values = interpolated;
         end
 
         % gets the grid value at the given vector coordinate. Clamps
@@ -309,7 +363,7 @@ classdef grid2d
             
             % we index into the values array by converting the object into
             % a vector.
-            value = obj.values(obj.vec2ind(size(obj.values), coord));
+            value = squeeze(obj.values(obj.vec2ind(size(obj.values), coord)));
         end
         
         % simple function that interpolates the four corner points of every point into a new central vertex using bilinear interpolation. 
@@ -321,7 +375,7 @@ classdef grid2d
         % coordinate is the column. This is essentially "array index" coordinates
         % and is the most natural for internal storage.
         % returns: will return the interpolated value. This type depends on the type of the field (which should be a two dimensional vector field).
-        function interpolated = interpolateValueAt(field, coord)
+        function interpolated = interpolateValueAt(obj, coord)
             
             % TODO: shorten code by writing everything as matrices.
             
@@ -331,10 +385,10 @@ classdef grid2d
             lower_left_grid_point = floor(coord);
 
             % now we find the value of the field at the four surrounding grid points for this cell.	
-            lower_left_field_value   = field.gridValueAt(lower_left_grid_point);
-            lower_right_field_value  = field.gridValueAt(lower_left_grid_point + [1 0]);
-            upper_right_field_value  = field.gridValueAt(lower_left_grid_point + [1 1]);
-            upper_left_field_value   = field.gridValueAt(lower_left_grid_point + [0 1]);
+            lower_left_field_value   = obj.gridValueAt(lower_left_grid_point);
+            lower_right_field_value  = obj.gridValueAt(lower_left_grid_point + [1 0]);
+            upper_right_field_value  = obj.gridValueAt(lower_left_grid_point + [1 1]);
+            upper_left_field_value   = obj.gridValueAt(lower_left_grid_point + [0 1]);
 
             % we find our coordinates in cell space. 
             % For example, (.5, .5) would represent the middle of the cell.
