@@ -1,72 +1,37 @@
 % represents 2D grid of region [1, N]x[1,N] (we call these grid
 % coordinates)
 classdef grid2d < handle
+    
+    
     properties
         % 2D array of values (i, j) |-> (x_i, y_i)
         values 
-        
-        % discretized laplacian operator (we cache the matrix)
-        discretized_laplacian_operator
-        
-        % discretized divergence operator (we cache the matrix)
-        discreteized_divergence_operator
-        
         % number of grid points
         N
-        % determines if scalar or vector field
-        is_scalar_field
+        % the type of field (scalar or vector field)
+        field_type
     end
     
     properties (Dependent)
-        % this grid represented as a stencil
-        stencil_vector
-        % size of the stencil vector
-        stencil_length
+        % stencil for computing pressure poisson equation
+        pressure_stencil
+        % stencil for computing dissipation equation for velocity
+        dissipation_stencil
+        % dirichlet boundary conditions for velocity
+        velocity_boundary_stencil
+        % neumann boundary conditions for pressure
+        pressure_boundary_stencil
         
         % spatial resolution
         dx
         % size of the grid (N + 1) x (N + 1)
         grid_size
+        % the divergence of this vector field
+        divergence
     end
     
     methods (Access = private)
-        % creates a sparse matrix from a stencil for four points. 
-        % The stencil should have the following ordering when converting
-        % from the 2D grid to 1D vector
-        %       4
-        %       |
-        %       |
-        % 2 --- 3 ----- 5
-        %       |
-        %       |
-        %       1
         
-        function m = create_matrix_from_stencil(stencil)
-            % make bands from stencil into sparse matrix
-
-            % first band
-            i1 = 1:N;
-            j1 = 1:N;
-            s1 = ones(1, N) * stencil(1);
-
-            % second band
-            j2 = i1 + 1;
-            s2 = ones(1, N) * stencil(2);
-
-            % third band
-            j3 = i1 + 2;
-            s3 = ones(1, N) * stencil(3);
-
-            % fourth band
-            j4 = i1 + 3;
-            s4 = ones(1, N) * stencil(4);
-
-            % fifth band
-            j5 = i1 + 4;
-            s5 = ones(1, N) * stencil(5);
-
-            m = sparse([i1 i1 i1 i1 i1], [j1 j2 j3 j4 j5], [s1 s2 s3 s4 s5]);
-        end
         
         % simple command that converts a vector to a multidimensional index given the size of the array
         % you should ignore any singleton dimensions (don't provide an element of the vector)
@@ -123,74 +88,56 @@ classdef grid2d < handle
         function g_size = get.grid_size(obj)
             s      = size(obj.values);
             g_size = s(1 : end - 1);
+        end    
+        % stencil for computing pressure poisson equation
+        function s = get.pressure_stencil(obj)
+            % you can derive this from the symbolic definition of Jacobi
+            % iteration
+            s = 1/4 * [1 1 1 1 -obj.dx()^2];
         end
         
-        function stencil_length = get.stencil_length(obj)
-            stencil_length = 5 * (obj.N - 1)^2;
+        % stencil for computing dissipation equation for velocity
+        function s = get.dissipation_stencil(obj)
+            s = zeros(1, 4);
+        end
+        % dirichlet boundary conditions for velocity
+        function s = get.velocity_boundary_stencil(obj)
+            s = -obj.pressure_boundary_stencil();
         end
         
-        % code that converts the vector we use when multiplying by the stencil
-        % operator back into a grid. The ordering we are "unconverting" is
-        %       4
-        %       |
-        %       |
-        % 2 --- 3 ----- 5
-        %       |
-        %       |
-        %       1
-
-        function set.stencil_vector(obj, vector_in)
-            obj.values = zeros(obj.N, obj.N);
-
-            % the current index of the center point in above diagram in the
-            % stencil_vector.
-            cur_center_point_index = 3;
+        function s = get.pressure_boundary_stencil(obj)
+            s = [1 1 1 1];
+        end
+        
+        % compute the divergence of this grid using centered finite
+        % differences. Does nothing at the boundaries; these must be
+        % handled separately.
+        function div = get.divergence(obj)
+            % fill a grid with zeros
+            div = grid2d(obj.N, false);
             
-            % we stay away from the boundaries because they don't have all the
-            % neighbors.
-            % now we update the grid.
-            for i = 2:(obj.N - 1)
-                for j = 2:(obj.N - 1)
-                    % convert the grid to a vector using the ordering described
-                    % above
-
-                    % Point 1:
-                    obj.values(i, j - 1) = vector_in(cur_center_point_index - 2);
-
-                    % Point 2:
-                    obj.values(i - 1, j) = vector_in(cur_center_point_index - 1);
-
-                    % Point 3:
-                    obj.values(i, j) = vector_in(cur_center_point_index);
-
-                    % Point 4:
-                    obj.values(i, j + 1) = vector_in(cur_center_point_index + 1);
-
-                    % Point 5:
-                    obj.values(i + 1, j) = vector_in(cur_center_point_index + 2);
-
-                    % now advance the index by 6 so that we advance to the next
-                    % center node
-                    cur_center_point_index = cur_center_point_index + 5; 
+            % handle all non-boundary values
+            for i = 2:obj.N()
+                for j = 2:obj.N()
+                    % update the x-coordinate
+                    div.values(i, j, 1) = 1 / (2 * obj.dx) * (obj.values(i + 1, j) - obj.values(i - 1, j));
+                    
+                    % update the y-coordinate
+                    div.values(i, j, 2) = 1 / (2 * obj.dx) * (obj.values(i, j + 1) - obj.values(i, j - 1));
                 end
             end
         end
-        
-        function is_scalar_field = get.is_scalar_field(obj) 
-            is_scalar_field = (size(obj.values, 3) == 1);
-        end
-        
         % plots a 3D array representing a vector field in grid coordinates (1, 1),
         % (1, 2), etc. The plotting will be in grid coordinates so the field
         % should be in grid coordinates.
-        function plot(obj)
-            if obj.is_scalar_field()
+        function p = plot(obj)
+            if obj.field_type == FieldTypes.ScalarField
                 % it's a scalar field so print a heatmap
                 colormap('hot');
 
                 % we transpose the field so that we have the column and row
                 % orderings corresponding to our grid construction.
-                imagesc(flipud(transpose(obj.values)));
+                p = imagesc(flipud(transpose(obj.values)));
                 
             else
                 % plot the vector field
@@ -202,69 +149,34 @@ classdef grid2d < handle
                 Fy = transpose(obj.values(:, :, 2));
 
                 % note the parameter of zero to prevent scaling.
-                quiver(x,y, Fx, Fy);        
-            end
-        end
-
-        % converts a scalar grid to stencil ordering in one huge vector so that we
-        % can discretize the linear operators.
-        % The ordering is as follows:
-        %       4
-        %       |
-        %       |
-        % 2 --- 3 ----- 5
-        %       |
-        %       |
-        %       1
-        function stencil_vector = get.stencil_vector(obj)
-
-            % Q: how much more inefficient is it to allow the repetition of
-            % neighbors during this conversion process?
-
-            % total_rows = 5 points per interior grid point
-            stencil_vector = zeros( obj.stencil_length(), 1);
-
-            % the current index of the center point in above diagram in the
-            % stencil_vector.
-            cur_center_point_index = 3;
-
-            % we stay away from the boundaries because they don't have all the
-            % neighbors.
-            for i = 2:(obj.N - 1)
-                for j = 2:(obj.N - 1)
-                    % convert the grid to a vector using the ordering described
-                    % above
-
-                    % Point 1:
-                    stencil_vector(cur_center_point_index - 2)  = field(i, j - 1);
-
-                    % Point 2:
-                    stencil_vector(cur_center_point_index - 1)  = field(i - 1, j);
-
-                    % Point 3:
-                    stencil_vector(cur_center_point_index)      = field(i, j);
-
-                    % Point 4:
-                    stencil_vector(cur_center_point_index + 1)  = field(i, j + 1);
-
-                    % Point 5:
-                    stencil_vector(cur_center_point_index + 2)  = field(i + 1, j);
-
-                    % now advance the index by 6 so that we don't overwrite the old
-                    % values
-                    cur_center_point_index = cur_center_point_index + 5; 
-                end
+                p = quiver(x,y, Fx, Fy);        
             end
         end
         
-    end
+        % updates a given plot depending on our field type
+        function update_plot(obj, p)
+            if obj.field_type == FieldTypes.ScalarField
+                
 
+                % we transpose the field so that we have the column and row
+                % orderings corresponding to our grid construction.
+                p.CDataMapping = 'scaled';
+                p.CData = 
+                
+            else
+                % TODO: update vector field plot       
+            end
+        end
+    end
+        
     methods (Access = public)
+        
+        
         % constructs a grid with N sample points in each direction (will
         % actually be N + 1 since we include zero).
         % resolution: first argument specifies the grid resolution. If < 1
         % then we assume its dx. If > 1 then we assume its N.
-        % is_scalar: specifies if it is a scalar field or not.
+        % type: field type from FieldTypes enum.
         % F: a function for constructing the vector field dynamically. For
         % example, F([x y]) = v.
         function obj = grid2d(varargin)
@@ -278,8 +190,9 @@ classdef grid2d < handle
             end
 
             % decide what kind of field to construct
-            is_scalar = varargin{2};
-            if is_scalar
+            obj.field_type = varargin{2};
+            
+            if obj.field_type == FieldTypes.ScalarField
                 % scalar field
                 obj.values = zeros(obj.N + 1, obj.N + 1, 1);
             else
@@ -350,11 +263,36 @@ classdef grid2d < handle
         function value = gridValueAt(obj, coord)
             coord = obj.clamp_to_boundaries(coord);
             
-            % we index into the values array by converting the object into
-            % a vector.
-            value = squeeze(obj.values(obj.vec2ind(size(obj.values), coord)));
+            value = squeeze(obj.values(coord(1), coord(2), :));
         end
         
+        % boundary_stencil: [RIGHT TOP LEFT BOTTOM]
+        function set_boundaries(obj, boundary_stencil)
+            
+            % handle the right boundary (little clunky, but slice notation
+            % is clunky too).
+            % Note: I'm not totally sure how to handle the corners, but now
+            % just update each of them twice.
+            for i = 1:(obj.N + 1)
+                obj.values(end, i) = boundary_stencil(1) * obj.values(end - 1, i);
+            end
+            
+            % handle the top boundary
+            for i = 1:(obj.N + 1)
+                obj.values(i, end) = boundary_stencil(2) * obj.values(i, end - 1);
+            end
+            
+            % handle the left boundary
+            for i = 1:(obj.N + 1)
+                obj.values(1, i) = boundary_stencil(3) * obj.values(2, i);
+            end
+            
+            % handle the bottom boundary
+            for i = 1:(obj.N + 1)
+                obj.values(i, 1) = boundary_stencil(4) * obj.values(i, 2);
+            end
+
+        end
         % simple function that interpolates the four corner points of every point into a new central vertex using bilinear interpolation. 
         % Interpolates the four vertices surrounding the coordinate given by
         % 'coords'.

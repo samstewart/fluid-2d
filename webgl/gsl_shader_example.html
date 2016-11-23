@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Sample Three.js</title>
+		<style>
+			#container {
+				background: #000;
+				width: 400px;
+				height: 300px;
+			}
+		</style>
+	</head>
+	<body>
+
+		<div id="container">
+
+
+		</div>
+
+	</body>
+
+	<!-- GSL Shaders -->
+	<script type="x-shader/x-vertex" id="vertexshader">
+
+
+		void main()
+		{
+			gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+		}
+
+	</script>
+
+	<script type="x-shader/x-fragment" id="fragmentshader">
+
+		void main()
+		{
+			gl_FragColor 	= vec4(1.0,1.0,0.0,1.0);
+		}
+
+	</script>
+
+	<!-- End Shaders -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+	<script src="js/three.js"></script>
+
+	<script type="text/javascript">
+
+	// set the scene size
+	var WIDTH = 400,
+	    HEIGHT = 400;
+
+	// set some camera attributes
+	var VIEW_ANGLE = 45,
+	    ASPECT = WIDTH / HEIGHT,
+	    NEAR = 1,
+	    FAR = 1000;
+
+	// get the DOM element to attach to
+	// - assume we've got jQuery to hand
+	var $container = $('#container');
+
+	// create a WebGL renderer, camera
+	// and a scene
+	var renderer = new THREE.WebGLRenderer();
+	var camera = new THREE.PerspectiveCamera(
+		VIEW_ANGLE,
+    ASPECT,
+    NEAR,
+    FAR  );
+	var scene = new THREE.Scene();
+
+	// the camera starts at 0,0,0 so pull it back so that we can see the box
+	camera.position.z = 300;
+
+	// start the renderer
+	renderer.setSize(WIDTH, HEIGHT);
+
+	// attach the render-supplied DOM element
+	$container.append(renderer.domElement);
+
+	// add the controls for moving in this space.
+	controls = new THREE.OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.15;
+	controls.enableZoom = true;
+
+	// create the sphere's material
+	var shaderMaterial = new THREE.ShaderMaterial({
+		vertexShader:   $('#vertexshader').text(),
+		fragmentShader: $('#fragmentshader').text()
+	});
+
+	// set up the sphere vars
+	var radius = 50, segments = 16, rings = 16;
+
+	// create a new mesh with sphere geometry -
+	// we will cover the sphereMaterial next!
+
+	var sphere = new THREE.Mesh(
+	   new THREE.SphereGeometry(radius, segments, rings),
+	   shaderMaterial);
+
+	var box = new THREE.Mesh(
+		new THREE.BoxGeometry(150, 150, 0)
+		);
+
+	// add the sphere and camera to the scene
+	scene.add(box);
+	scene.add(camera);
+
+	renderer.render(scene, camera);
+
+	</script>
+</html>
