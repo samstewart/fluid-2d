@@ -28,6 +28,15 @@
 	}
 </script>
 
+<script type="x-shader/x-fragment" id="initialPressureField">
+
+	void main() {
+
+		// build velocity field with gradiant sloping upwards.
+		return vec4(0, 0, 0, 0);
+	}
+</script>
+
 <script type="x-shader/x-fragment" id="initialDivergenceField">
 
 	// we have the Dirichlet conditions of 0 at the boundary.

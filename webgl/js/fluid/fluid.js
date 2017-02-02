@@ -11,27 +11,52 @@ function Fluid(scale_constants, shaders, renderer) {
 								scale_constants.fluid.vert_grid_points, 
 								renderer);
 
-	var pressureTexture   = this.gpuComputer.createTexture();
-	var divergenceTexture = this.gpuComputer.createTexture();
-
-	// the particle grid is actually smaller than the other textures.
-	// We have fewer than one particle per point in the velocity field.
-	var particleTexture	  = this.gpuComputer.createTexture(scale_constants.particles.grid_size, scale_constants.particles.grid_size);
-	var velocityTexture	  = this.gpuComputer.createTexture();
-
-
 	// setup the particle visualization. This will also initialize the particle texture.
 	this.particles = new Particles( scale_constants, 
-									shaders.particles, 
+									shaders, 
 									particleTexture);
 
 	// bind variables to textures
 	// Note that we seed the particleTexture with the initial positions in the Particles constructor.
 	// TODO: this separation is a bit unclear. Maybe we should do the texture initialization in here?
-	this.pressureVariable 				= this.gpuComputer.addVariable('pressureVariable', shaders.pressureShader, pressureTexture);
-	this.divergenceVariable 			= this.gpuComputer.addVariable('divergenceVariable', shaders.divergenceShader, divergenceTexture);
-	this.particleVariable 				= this.gpuComputer.addVariable('particleVariable', shaders.particleStepShader, particleTexture);
-	this.velocityVariable 				= this.gpuComputer.addVariable('velocityVariable', shaders.velocityShader, velocityTexture);
+	this.pressureVariable 				= this.gpuComputer.addVariable(
+		'pressureVariable', 
+		shaders.pressureShader, 
+		{
+			shader: shaders.initialPressureField,
+			width: scale_constants.fluid.hori_grid_points,
+			height: scale_constants.fluid.hori_grid_points,
+		}
+	);
+
+	this.divergenceVariable 			= this.gpuComputer.addVariable(
+		'divergenceVariable', 
+		shaders.divergenceShader, 
+		{
+			shader: shaders.initialDivergenceField,
+			width: scale_constants.fluid.hori_grid_points,
+			height: scale_constants.fluid.hori_grid_points,
+		}
+	);
+	
+	this.particleVariable 				= this.gpuComputer.addVariable(
+		'particleVariable', 
+		shaders.particleStepShader, 
+		{
+			shader: shaders.initialParticleField,
+			width: scale_constants.particles.grid_size,
+			height: scale_constants.particles.grid_size
+		}
+	);
+	this.velocityVariable 				= this.gpuComputer.addVariable(
+		'velocityVariable', 
+		shaders.velocityShader, 
+		{
+			shader: shaders.initialVelocityField,
+			width: scale_constants.fluid.hori_grid_points,
+			height: scale_constants.fluid.hori_grid_points
+		}
+	);
 
 	// expose variables to the shader
 	this.gpuComputer.setVariableDependencies(this.pressureVariable, [ this.pressureVariable, this.divergenceVariable ]);

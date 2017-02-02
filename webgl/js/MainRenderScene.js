@@ -1,5 +1,5 @@
 // simple class to manage the scene we use for rendering
-function MainRenderScene(width, height, shaders) {
+function MainRenderScene(width, height) {
 	this.renderer = renderer;
 
 	this.width = width;
@@ -20,20 +20,44 @@ function MainRenderScene(width, height, shaders) {
 
 	// place the rendering quad in the scene
 
-	this.renderQuad = this.createRenderQuad(shaders);
+	this.renderQuad = this.createRenderQuad();
 	//this.scene.add(this.renderQuad);
 }
 
+
+MainRenderScene.prototype.getPassThroughVertexShader = function() {
+	return	"varying vec2 vUv;\n"
+			"void main()	{\n" +
+			"\n" +
+			"\nvUv = uv;\n"+
+			"	gl_Position = vec4( position, 1.0 );\n" +
+			"\n" +
+			"}\n";
+
+}
+
+MainRenderScene.prototype.getPassThroughFragmentShader = function( w, h ) {
+
+	return  "\nvarying vec2 vUv;\n"
+			"\nuniform sampler2D outputTexture;\n\n" +
+			"void main() {\n" +
+			"\n" +
+			"	gl_FragColor = texture2D(texture, vUv);\n" +
+			"\n" +
+			"}\n";
+
+}
+
 /** constructs a unit quad quad with the given shader (which might include a texture) */
-MainRenderScene.prototype.createRenderQuad = function(shaders) {
+MainRenderScene.prototype.createRenderQuad = function() {
 
 	// visualize the solution to the pressure equation.
 	var shaderMaterial = new THREE.ShaderMaterial( {
 				uniforms: {
 					"outputTexture": { value: null }
 				},
-				vertexShader:   shaders.vertexShader,
-				fragmentShader: shaders.fragmentShader,
+				vertexShader:   this.getPassThroughVertexShader(),
+				fragmentShader: this.getPassThroughFragmentShader(),
 				depthWrite: false
 			} );
 
@@ -46,3 +70,4 @@ MainRenderScene.prototype.createRenderQuad = function(shaders) {
 	return quad;
 
 }
+

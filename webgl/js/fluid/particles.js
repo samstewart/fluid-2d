@@ -44,12 +44,12 @@ function Particles(scale_constants, shaders, particleData) {
 		{
 			uniforms: { 
 				color: { value: new THREE.Color( 0xffffff ) },
-				particleVariable: { value: particleData }
+				particleVariable: { value: particleData },
 				size: scale_constants.particles.particle_size
 
 			},
-			fragmentShader: shaders.fragmentShader,
-			vertexShader: shaders.vertexShader,
+			fragmentShader: shaders.particleFragmentShader,
+			vertexShader: shaders.particleVertexShader,
 			blending: THREE.AdditiveBlending,
 			transparent: false,
 			depthTest: false

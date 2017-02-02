@@ -113,7 +113,6 @@ var FLUID_SCALE = 1 / 2;
 
 // the list of scale constants
 var SCALE_CONSTANTS 	  = {};
-var MAIN_RENDERING_SHADER = "#pressureFieldVisualization";
 
 $(document).ready(function() {
 	init();
@@ -225,29 +224,16 @@ function setupMainRenderQuad() {
 	
 	mainRenderScene = new MainRenderScene(
 		SCALE_CONSTANTS.window.width, 
-		SCALE_CONSTANTS.window.height, 
-	{
-		vertexShader: 	$("#vertexShader").text(), 
-		fragmentShader: $(MAIN_RENDERING_SHADER).text()
-	});
+		SCALE_CONSTANTS.window.height);
 }
 
 
 function setupFluidSolver() {
-	// fluid with only six grid points
-	var shaders 			    = new Object();
-
-	shaders.defaultVertexShader   = $('#vertexShader').text();
-	shaders.pressureShader 		  = $('#pressureShader').text();
-	shaders.divergenceShader 	  = $('#divergenceShader').text();
-	shaders.particleStepShader 	  = $('#particleStepShader').text();
-	shaders.velocityShader 		  = $('#velocityShader').text();
-
-	shaders.particles = {
-		vertexShader: $('#particleVertexShader').text(),
-		fragmentShader: $('#particleFragmentShader').text()
-	}
-
+	// we grab all the shader code from index.html
+	var shaders = {};
+	$('script[type="x-shader/x-fragment"], script[type="x-shader/x-vertex"]').each(function(i, val) { 
+		shaders[val.id] = $(val).text();
+	});
 
 	fluid = new Fluid(SCALE_CONSTANTS, 
 					  shaders, 
