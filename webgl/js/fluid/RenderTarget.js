@@ -6,14 +6,43 @@ function RenderTarget(shaderMaterial, width, height) {
 	// the shader we are using
 	this.shaderMaterial = shaderMaterial;
 
-
 	// the size of the frame buffer
 	this.width = width;
 	this.height = height;
 
 	// we maintain two texture buffers so that we can swap between reading and writing.
-	this.readBuffer  = new THREE.WebGLRenderTarget(width, height, {depthBuffer: false, stencilBuffer: false, format: THREE.RGBAFormat});
-	this.writeBuffer = new THREE.WebGLRenderTarget(width, height, {depthBuffer: false, stencilBuffer: false, format: THREE.RGBAFormat});
+	var rendererOptions = {
+		depthBuffer: false, 
+		stencilBuffer: false, 
+		format: THREE.RGBAFormat,
+		type: THREE.FloatType,
+		minFilter: THREE.LinearFilter,
+		magFilter: THREE.NearestFilter
+	};
+
+	this.readBuffer  = new THREE.WebGLRenderTarget(width, height, rendererOptions);
+	this.writeBuffer = new THREE.WebGLRenderTarget(width, height, rendererOptions);
+
+	// initialize texture buffer
+	this.readBuffer.texture = createTextureWithColorMap(this.width, this.height, function(x, y) {
+		var rgba = new Float32Array(4);
+		rgba[0] = 0;
+		rgba[1] = 0;
+		rgba[2] = 0;
+		rgba[3] = 1.0;
+		return rgba;
+	});
+		
+
+	this.writeBuffer.texture = createTextureWithColorMap(this.width, this.height, function(x, y) {
+		var rgba = new Float32Array(4);
+		rgba[0] = 0;
+		rgba[1] = 0;
+		rgba[2] = 0;
+		rgba[3] = 1.0;
+
+		return rgba;
+	});
 
 	// then initiate the rendering scene
 	this.setupRenderingToTextureScene();
@@ -21,6 +50,7 @@ function RenderTarget(shaderMaterial, width, height) {
 
 /** constructs a unit quad quad with the given shader (which might include a texture) */
 RenderTarget.prototype.createRenderQuad = function(shaderMaterial) {
+
 	var plane = new THREE.PlaneGeometry( this.width, this.height );
 
 	// TODO: render surface normal and see which direction is front and back. Cheap hack for now.
@@ -28,25 +58,25 @@ RenderTarget.prototype.createRenderQuad = function(shaderMaterial) {
 
 	// we use a shader to render the geometry
 	var quad = new THREE.Mesh( plane, shaderMaterial );
-	//quad.position.z = -100;
+	quad.matrixAutoUpdate = false;
 
 	return quad;
 
 }
+
 // ------ stuff for rendering into the scene ----
 // the quad for rendering the content
 RenderTarget.prototype.setupRenderingToTextureScene = function() {
 	
 	this.scene = new THREE.Scene();
 
-	// create the lights (one lighting the front and one lighting the back)
+	// create the lights one lighting the front
 	var light = new THREE.DirectionalLight(0xffffff);
-	light.position.set(0, 0, -1);
+	light.position.set(0, 0, 1);
 	this.scene.add(light);
 
 	// create the camera
-	this.camera = new THREE.OrthographicCamera(- this.width / 2.0, this.width / 2.0, -this.height / 2.0, this.height / 2.0, -1000, 1000);
-	this.camera.position.z = 100; // make sure we can see the whole quad
+	this.camera = new THREE.OrthographicCamera(- this.width / 2.0, this.width / 2.0, this.height / 2.0, -this.height / 2.0, -1000, 1000);
 
 	// place the rendering quad in the scene
 	this.renderQuad = this.createRenderQuad(this.shaderMaterial);
@@ -61,14 +91,9 @@ RenderTarget.prototype.swap = function() {
 }
 
 // updates the shader data, usually called right before a rendering.
-RenderTarget.prototype.updateShaderData = function(main_renderer) {
+RenderTarget.prototype.updateShaderData = function() {
 
 	// give the shader access to the current texture data
-	this.shaderMaterial.uniforms.texture = this.readBuffer.texture;
+	this.shaderMaterial.uniforms.texture.value = this.readBuffer.texture;
 
-	// render into our RenderTarget
-	// main_renderer.render( this.scene, this.camera, this.writeBuffer, true );
-
-	// swap buffers so that we save the current data
-	// this.swap();
 }

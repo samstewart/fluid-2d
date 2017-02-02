@@ -1,0 +1,27 @@
+{
+  "name": "threejs-fluids",
+  "version": "1.0.0",
+  "description": "WebGL 2D fluid renderer",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samstewart/samstewart.github.io.git"
+  },
+  "keywords": [
+    "fluids",
+    "webgl",
+    "shaders"
+  ],
+  "dependencies" : [
+	"threejs" : "^0.82.1"
+  ],
+  "author": "Sam Stewart",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/samstewart/samstewart.github.io/issues"
+  },
+  "homepage": "https://github.com/samstewart/samstewart.github.io#readme"
+}
