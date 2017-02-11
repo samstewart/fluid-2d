@@ -89,7 +89,35 @@ Big goal:
 
 
 % TODO: 
-1. Convert the code for filling the initial data to shaders
+Backing up to the level of GPUComputationRenderer, I needed to do a serious refactor. 
+
+The big idea is that we are essentially converting from the categories of Objects to the categories
+of textures (full on data structure conversion).
+1. Pull all code for the variables out into their own class.
+2. Enable dependencies for initializing variables
+3. Enable cyclic dependencies (not possible when initializing, but possible when computing). 
+Probably easiest way is to simply recompile the shader every time. Stupid to have only one initialization step.
+This is duplicated effort since we don't need to recreate a graph of objects.
+4. We need a variable name for each variable since we can't deduce it from the code (easily).
+
+Up to the level of GPGPU protoplanet:
+1. I need to generate textures filled with appropriately scaled random numbers. Probably easiest to do as data texture.
+Look at the createTexture class for boilerplate code on how to do this. 
+2. Rewrite other GPUComputationExamples using my new framework.
+
+Up another level:
+1. Would be nice to have a tool for visualizing the various variables when debugging. Somehow arrange
+them in a grid? Can we place the textures in a grid. Will be crucial for debugging the fluid stuff.
+
+This should all be merged back into the main branch of THREE.js. The key argument will be code conciseness. 
+We should be able to eliminate a ton of complexity.
+
+The central idea is that we should be able to interact with the shader platform as if we are doing 
+object oriented programming. Managing the various variables should be essentially automatic.
+
+Back to the original fluids problem:
+
+We don't need the model matrix or the projection
 2. Change code so that final particle positions are in clip space. Really only need two coordinate systems:
 	Clip space
 	Sim space
@@ -159,7 +187,7 @@ Related by affine transformation:
 TODO:
 	Convert initial conditions computation to intial conditions shader
 	No need to recreate the wheel on this.
-	Yet another modification to GPUComputationRenderer
+	Submit new GPUComputationRenderer to Three.js
 
 Conversion to image coordinates is just a scaling on two levels: cell size and fluid scale.
 
@@ -183,7 +211,6 @@ function generateScaleConstants(fluid_downscaling_factor) {
 		// the cell size in fluid coords (not the same as dx)
 		// TODO: pick something sensible for this
 		grid_cell_size: 100,
-
 		fluid_downscaling_factor: fluid_downscaling_factor
 	}
 	// Q: should we assume the grid points are spaced equally apart?
